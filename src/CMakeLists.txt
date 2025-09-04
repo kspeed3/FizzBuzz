@@ -1,4 +1,5 @@
 set(Sources
+    FizzBuzz.cpp
     main.cpp
 )
 
