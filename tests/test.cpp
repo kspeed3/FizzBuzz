@@ -64,7 +64,11 @@ int main()
 {
     const int NUMBER = 10000000;
 
-    std::string command = "build/Project ";
+    #ifdef _WIN32
+        std::string command = "build\\Project.exe ";
+    #else
+        std::string command = "build/Project ";
+    #endif
     command += std::to_string(NUMBER);
 
     std::string output = exec(command.c_str());
