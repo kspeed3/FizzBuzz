@@ -30,10 +30,18 @@ std::string exec(const char* cmd)
     }
     catch (...)
     {
-        pclose(pipe);
+        #ifdef _WIN32
+            _pclose(pipe);
+        #else
+            pclose(pipe);
+        #endif
         throw;
     }
-    pclose(pipe);
+    #ifdef _WIN32
+        _pclose(pipe);
+    #else
+        pclose(pipe);
+    #endif
     return result;
 }
 
