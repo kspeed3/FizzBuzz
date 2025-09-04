@@ -104,8 +104,12 @@ int main()
               << "-----------------------------------\n"
               << "\n";
 
-    std::cout << time;
-    std::cout << "Common answer execution time: " << durationMicroseconds.count() << " Microseconds" << "\n";
+    std::cout << "\n\n"
+              << "-----------------------------------\n\n"
+              << "\tPERFORMANCE INFO:\n\n"
+              << time
+              << "Common answer execution time: " << durationMicroseconds.count() << " Microseconds" << "\n\n"
+              << "-----------------------------------\n";
 
     return 0;
 }
