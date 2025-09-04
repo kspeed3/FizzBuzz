@@ -11,7 +11,12 @@ std::string exec(const char* cmd)
 {
     char buffer[128];
     std::string result = "";
-    FILE* pipe = popen(cmd, "r");
+    FILE* pipe;
+    #ifdef _WIN32
+        pipe = _popen(cmd, "r");
+    #else
+        pipe = popen(cmd, "r");
+    #endif
     if (!pipe)
     {
         throw std::runtime_error("popen() failed!");
