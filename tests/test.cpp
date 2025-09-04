@@ -1,5 +1,97 @@
-int main(int argc, char* argv[])
+#include <chrono>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <cstdio>
+#include <cassert>
+#include <stdexcept>
+
+// Function to execute a command and get its output
+std::string exec(const char* cmd)
 {
+    char buffer[128];
+    std::string result = "";
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe)
+    {
+        throw std::runtime_error("popen() failed!");
+    }
+    try
+    {
+        while (fgets(buffer, sizeof(buffer), pipe) != NULL) 
+        {
+            result += buffer;
+        }
+    }
+    catch (...)
+    {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
+
+void FizzBuzz(int n)
+{
+    for (int i = 1; i <= n; ++i)
+    {
+        if (i % 15 == 0)
+            std::cout << "FizzBuzz\n";
+        else if (i % 3 == 0)
+            std::cout << "Fizz\n";
+        else if (i % 5 == 0)
+            std::cout << "Buzz\n";
+        else
+            std::cout << i << "\n";
+    }
+}
+
+int main()
+{
+    const int NUMBER = 10000000;
+
+    std::string command = "build/Project ";
+    command += std::to_string(NUMBER);
+
+    std::string output = exec(command.c_str());
+    std::string time;
+    const size_t pos = output.find("Program");
+    if (pos != std::string::npos)
+    {
+        time = output.substr(pos);
+        output.erase(pos);
+    }
+
+    // Redirect cout to a stringstream
+    std::stringstream match;
+    std::streambuf* oldCout = std::cout.rdbuf(match.rdbuf());
+    
+    const auto start = std::chrono::high_resolution_clock::now();
+    FizzBuzz(NUMBER);
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto durationMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    // Restore original cout
+    std::cout.rdbuf(oldCout);
+
+    std::cout << "\n\n"
+              << "-----------------------------------\n\n";
+
+    if (output != match.str())
+    {
+        std::cout << "\tFizzBuzz test failed\n\n"
+                  << "-----------------------------------\n"
+                  << "\n";
+        return 1;
+    }
+
+    std::cout << "\tFizzBuzz test passed\n\n"
+              << "-----------------------------------\n"
+              << "\n";
+
+    std::cout << time;
+    std::cout << "Common answer execution time: " << durationMicroseconds.count() << " Microseconds" << "\n";
 
     return 0;
 }
