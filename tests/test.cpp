@@ -81,6 +81,7 @@ int main()
     if (output != match.str())
     {
         std::cout << "\tFizzBuzz test failed\n\n"
+                  << "\tOutput does not match expected\n\n"
                   << "-----------------------------------\n"
                   << "\n";
         return 1;
