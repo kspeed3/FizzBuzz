@@ -1,51 +1,27 @@
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <cstdio>
-#include <cassert>
-#include <stdexcept>
 
-// Function to execute a command and get its output
-std::string exec(const char* cmd)
+#include "FizzBuzz.hpp"
+
+template<class T>
+class test
 {
-    char buffer[128];
-    std::string result = "";
-    FILE* pipe;
-    #ifdef _WIN32
-        pipe = _popen(cmd, "r");
-    #else
-        pipe = popen(cmd, "r");
-    #endif
-    if (!pipe)
-    {
-        throw std::runtime_error("popen() failed!");
-    }
-    try
-    {
-        while (fgets(buffer, sizeof(buffer), pipe) != NULL) 
-        {
-            result += buffer;
-        }
-    }
-    catch (...)
-    {
-        #ifdef _WIN32
-            _pclose(pipe);
-        #else
-            pclose(pipe);
-        #endif
-        throw;
-    }
-    #ifdef _WIN32
-        _pclose(pipe);
-    #else
-        pclose(pipe);
-    #endif
-    return result;
-}
+public:
+    test(const std::string& output, const T& runtime) : output(output), runtime(runtime) { }
 
-void FizzBuzz(int n)
+public:
+    const std::string output;
+    const T runtime;
+
+public:
+    friend std::ostream& operator<<(std::ostream& out, const test& object) { return out << object.runtime.count(); }
+    bool operator!=(const test& object) { return output != object.output; }
+};
+
+void controlFizzBuzz(int n)
 {
     for (int i = 1; i <= n; ++i)
     {
@@ -60,56 +36,55 @@ void FizzBuzz(int n)
     }
 }
 
-int main()
+test<std::chrono::microseconds> getOutput(std::function<void(int n)> getFizzBuzz, int n)
 {
-    const int NUMBER = 10000000;
-
-    std::string command = "build/Project ";
-    command += std::to_string(NUMBER);
-
-    std::string output = exec(command.c_str());
-    std::string time;
-    const size_t pos = output.find("Program");
-    if (pos != std::string::npos)
-    {
-        time = output.substr(pos);
-        output.erase(pos);
-    }
-
     // Redirect cout to a stringstream
-    std::stringstream match;
-    std::streambuf* oldCout = std::cout.rdbuf(match.rdbuf());
-    
+    std::stringstream output;
+    std::streambuf* oldCout = std::cout.rdbuf(output.rdbuf());
+
     const auto start = std::chrono::high_resolution_clock::now();
-    FizzBuzz(NUMBER);
+    getFizzBuzz(n);
     const auto end = std::chrono::high_resolution_clock::now();
     const auto durationMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     // Restore original cout
     std::cout.rdbuf(oldCout);
 
-    std::cout << "\n\n"
-              << "-----------------------------------\n\n";
+    return test<std::chrono::microseconds>(output.str(), durationMicroseconds);
+}
 
-    if (output != match.str())
+int main()
+{
+    const int NUMBER = 10000000;
+
+    const std::function<void(int n)> user = FizzBuzz;
+    auto output = getOutput(user, NUMBER);
+
+    const std::function<void(int n)> control = controlFizzBuzz;
+    auto match = getOutput(control, NUMBER);
+
+    std::cout << "\n\n"
+              << "--------------------------------------------\n\n";
+
+    if (output != match)
     {
-        std::cout << "\tFizzBuzz test failed\n\n"
+        std::cout << "\tFizzBuzz test failed :(\n\n"
                   << "\tOutput does not match expected\n\n"
-                  << "-----------------------------------\n"
+                  << "--------------------------------------------\n"
                   << "\n";
         return 1;
     }
 
-    std::cout << "\tFizzBuzz test passed\n\n"
-              << "-----------------------------------\n"
+    std::cout << "\tFizzBuzz test passed :)\n\n"
+              << "--------------------------------------------\n"
               << "\n";
 
     std::cout << "\n\n"
-              << "-----------------------------------\n\n"
+              << "--------------------------------------------\n\n"
               << "\tPERFORMANCE INFO:\n\n"
-              << time
-              << "Common answer execution time: " << durationMicroseconds.count() << " Microseconds" << "\n\n"
-              << "-----------------------------------\n";
+              << "Program execution time: " << output << " Mircroseconds" << "\n"
+              << "Common answer execution time: " << match << " Microseconds" << "\n\n"
+              << "--------------------------------------------\n";
 
     return 0;
 }
